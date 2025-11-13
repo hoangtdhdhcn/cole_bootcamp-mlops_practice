@@ -6,7 +6,8 @@ COPY requirements.txt /app/
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY scripts/session_3 /app/      # use "COPY . /app/" to copy all
+# use "COPY . /app/" to copy all
+COPY scripts/session_3 /app/
 
 EXPOSE 8000
 
