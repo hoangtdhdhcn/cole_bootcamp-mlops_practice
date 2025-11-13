@@ -59,7 +59,7 @@ services:
 
   web:
     build: .
-    image: full_iris:latest
+    image: iris_mlops:latest
     container_name: iris-mlops
     command: sh -c "uvicorn app:app --reload"
     ports:
