@@ -2,10 +2,20 @@ version: "3.8"
 
 services:
   minio:
-    ports: []
+    ports:
+      - target: 9000
+        published: 0
+        protocol: tcp
+        mode: host
+    deploy:
+      replicas: 1
+
   mlflow-db:
     ports: []
+
   mlflow-server:
     ports: []
+
   web:
     ports: []
+
