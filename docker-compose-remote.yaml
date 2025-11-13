@@ -61,7 +61,7 @@ services:
     build: .
     image: full_iris:latest
     container_name: iris-mlops
-    command: sh -c "uvicorn session_4.app:app --reload"
+    command: sh -c "uvicorn app:app --reload"
     ports:
       - "8000:8000"
     volumes:
