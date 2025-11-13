@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  minio:
+    ports: []
+  mlflow-db:
+    ports: []
+  mlflow-server:
+    ports: []
+  web:
+    ports: []

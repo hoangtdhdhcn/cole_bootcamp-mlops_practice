@@ -39,7 +39,7 @@ jobs:
 
     - name: Start MLflow + dependencies
       run: |
-        docker compose -f docker-compose-full.yaml up -d mlflow-db minio create-bucket mlflow-server
+        docker compose -f docker-compose-full.yaml -f docker-compose-ci.yaml up -d mlflow-db minio create-bucket mlflow-server
 
     - name: Wait for MLflow server to be ready
       run: |
