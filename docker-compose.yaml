@@ -3,7 +3,7 @@ version: "3.8"  # Use a more specific version
 services:
   web:
     build:
-      context: ./scripts/session_3
+      context: .
       dockerfile: Dockerfile
     image: fastapi_iris:latest  # Explicitly define the image name and tag
     command: sh -c "uvicorn app:app --reload --app-dir scripts/session_3"  # Correct the app location
