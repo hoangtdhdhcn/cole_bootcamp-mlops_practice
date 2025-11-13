@@ -33,11 +33,6 @@ jobs:
           echo "Running training inside Docker..."
           docker compose -f docker-compose-local.yaml run --rm web python scripts/session_4/training.py
 
-      - name: Debug — Inspect app.py path
-        run: |
-          echo "Starting web container for debugging..."
-          docker compose -f docker-compose-local.yaml run --rm web sh -c "echo '== /app structure =='; ls -R /app"
-
       - name: Test FastAPI health (optional)
         run: |
           docker compose -f docker-compose-local.yaml up -d web
