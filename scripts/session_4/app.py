@@ -32,8 +32,14 @@ logging.info(f"Using MLflow tracking URI: {MLFLOW_TRACKING_URI}")
 # Initialize FastAPI and assets
 # ==============================
 app = FastAPI(title="Iris Classifier (MLOps UI Edition)")
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+
+# app.mount("/static", StaticFiles(directory="static"), name="static")
+# templates = Jinja2Templates(directory="templates")
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 # ==============================
 # Load Model from MLflow
