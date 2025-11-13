@@ -67,4 +67,4 @@ jobs:
         run: docker compose -f docker-compose-full.yaml down -v
 
       - name: Summary
-        run: echo "Pipeline finished: Training → Build → Push completed."
+        run: echo "Pipeline finished :Training → Build → Push completed."
