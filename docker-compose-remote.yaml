@@ -58,7 +58,9 @@ services:
       - create-bucket
 
   web:
-    build: .
+    build:
+      context: ./scripts/session_4
+      dockerfile: Dockerfile
     image: iris_mlops:latest
     container_name: iris-mlops
     command: sh -c "uvicorn app:app --reload"

@@ -13,7 +13,9 @@ script_dir = os.path.dirname(__file__)
 # Define possible model paths (relative to the script directory)
 model_paths = [
     os.path.join(script_dir, "iris_model.pkl"),                # main path
-    os.path.join(script_dir, "scripts", "session_3", "iris_model.pkl")  # fallback for tests/CI
+    os.path.join(script_dir, "scripts", "session_3", "iris_model.pkl"),  # fallback for tests/CI
+    os.path.join(script_dir, "model", "iris_model.pkl"),                # main path
+    os.path.join(script_dir, "scripts", "session_3", "model", "iris_model.pkl")  # fallback for tests/CI
 ]
 
 # Try loading the model from any existing path
