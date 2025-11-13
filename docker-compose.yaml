@@ -4,12 +4,12 @@ services:
   web:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.s3
     image: fastapi_iris:latest  # Explicitly define the image name and tag
     command: sh -c "uvicorn app:app --reload --app-dir scripts/session_3"  # Correct the app location
     ports:
       - "8000:8000"  # Expose port 8000
-    volumes:
-      - .:/app  # Mount the current directory to /app inside the container (useful for development)
+    # volumes:
+    #   - .:/app  # Mount the current directory to /app inside the container (useful for development)
     environment:
       - PYTHONUNBUFFERED=1  # Ensures that Python output is not buffered
