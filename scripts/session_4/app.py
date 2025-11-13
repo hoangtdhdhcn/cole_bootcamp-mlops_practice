@@ -13,10 +13,15 @@ from datetime import datetime
 # ==========================================================
 # Configuration
 # ==========================================================
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow-server:5000")
 MODEL_NAME = "iris_model"
 MODEL_STAGE = "Production"   # or "Staging" for testing
 DATA_LOG_PATH = "data/new_iris_data.csv"
+
+# Handle MLflow tracking URI flexibly for both Docker and local environments
+if os.getenv("RUNNING_IN_DOCKER") == "1":
+    MLFLOW_TRACKING_URI = "http://mlflow-server:5000"
+else:
+    MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
 
 # ==========================================================
 # Initialize FastAPI and assets
@@ -31,12 +36,12 @@ templates = Jinja2Templates(directory="templates")
 # ==========================================================
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
+model = None
 try:
     model_uri = f"models:/{MODEL_NAME}/{MODEL_STAGE}"
     model = mlflow.pyfunc.load_model(model_uri)
     print(f"Loaded model from MLflow Registry: {model_uri}")
 except Exception as e:
-    model = None
     print(f"Could not load model from MLflow Registry: {e}")
 
 # ==========================================================
@@ -45,6 +50,25 @@ except Exception as e:
 class IrisFeatures(BaseModel):
     petal_length: float
     petal_width: float
+
+# ==========================================================
+# Utility: Perform prediction and log data
+# ==========================================================
+def predict_and_log(df: pd.DataFrame):
+    """Perform model prediction and log inference data to CSV."""
+    preds = model.predict(df)
+    species_map = {0: "setosa", 1: "versicolor", 2: "virginica"}
+    species = [species_map.get(int(p), "Unknown") for p in preds]
+
+    # Log inference data
+    log_df = df.copy()
+    log_df["prediction"] = species
+    log_df["timestamp"] = datetime.now()
+
+    os.makedirs(os.path.dirname(DATA_LOG_PATH), exist_ok=True)
+    log_df.to_csv(DATA_LOG_PATH, mode="a", header=not os.path.exists(DATA_LOG_PATH), index=False)
+
+    return species
 
 # ==========================================================
 # API Prediction Endpoint
@@ -59,18 +83,7 @@ async def predict_iris_species(features: List[IrisFeatures]):
         "petal width (cm)": [f.petal_width for f in features]
     })
 
-    preds = model.predict(df)
-
-    species_map = {0: "setosa", 1: "versicolor", 2: "virginica"}
-    species = [species_map.get(int(p), "Unknown") for p in preds]
-
-    # Log inference data
-    log_df = df.copy()
-    log_df["prediction"] = species
-    log_df["timestamp"] = datetime.now()
-    os.makedirs(os.path.dirname(DATA_LOG_PATH), exist_ok=True)
-    log_df.to_csv(DATA_LOG_PATH, mode="a", header=not os.path.exists(DATA_LOG_PATH), index=False)
-
+    species = predict_and_log(df)
     return {"predictions": species}
 
 # ==========================================================
@@ -93,19 +106,9 @@ async def submit_form(
             "petal length (cm)": [petal_length],
             "petal width (cm)": [petal_width]
         })
+        species = predict_and_log(df)
+        result = species[0]
 
-        preds = model.predict(df)
-        species_map = {0: "setosa", 1: "versicolor", 2: "virginica"}
-        result = species_map.get(int(preds[0]), "Unknown")
-
-        # Log data for drift monitoring
-        log_df = df.copy()
-        log_df["prediction"] = [result]
-        log_df["timestamp"] = datetime.now()
-        os.makedirs(os.path.dirname(DATA_LOG_PATH), exist_ok=True)
-        log_df.to_csv(DATA_LOG_PATH, mode="a", header=not os.path.exists(DATA_LOG_PATH), index=False)
-
-    # Render HTML with result displayed
     return templates.TemplateResponse("index.html", {"request": request, "result": result})
 
 # ==========================================================
@@ -114,3 +117,13 @@ async def submit_form(
 @app.get("/health")
 async def health():
     return {"status": "ok", "model_loaded": model is not None}
+
+# ==========================================================
+# Startup Event (for clean logs)
+# ==========================================================
+@app.on_event("startup")
+async def startup_event():
+    if model:
+        print(f"Model '{MODEL_NAME}' ({MODEL_STAGE}) is ready for inference.")
+    else:
+        print("No model loaded — check MLflow tracking URI or registry stage.")

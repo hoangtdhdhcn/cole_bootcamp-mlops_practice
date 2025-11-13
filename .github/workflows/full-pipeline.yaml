@@ -1,137 +1,70 @@
-# name: Full Pipeline
-
-# on:
-#   [workflow_dispatch]   # Manual trigger
-
-# jobs:
-#   build-and-train:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#     - name: Check out repository
-#       uses: actions/checkout@v4
-
-#     - name: Set up Python
-#       uses: actions/setup-python@v5
-#       with:
-#         python-version: '3.11'
-
-#     - name: Install dependencies
-#       run: |
-#         python -m pip install --upgrade pip
-#         pip install -r requirements.txt
-
-#     - name: Train model with MLflow
-#       env:
-#         MLFLOW_TRACKING_URI: http://localhost:5000  # Local for testing (use real MLflow server in prod)
-#       run: |
-#         echo "Starting model training..."
-#         python scripts/session_4/training.py
-#         echo "Training completed and model logged to MLflow."
-
-#     - name: Log in to Docker Hub
-#       uses: docker/login-action@v2
-#       with:
-#         username: hoang12b48
-#         password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-#     - name: Build Docker image (FastAPI app)
-#       run: |
-#         docker compose -f docker-compose-full.yaml build
-
-#     - name: Tag Docker image
-#       run: |
-#         docker tag full_iris:latest hoang12b48/full_iris:latest
-
-#     - name: Push Docker image to Docker Hub
-#       run: |
-#         docker push hoang12b48/full_iris:latest
-
-#     - name: Summary
-#       run: echo "Pipeline finished :Training → Build → Push completed."
-
-
-
-
-
-
-
-
 name: Full Pipeline
 
 on:
-  [workflow_dispatch]  # Manual trigger
+  workflow_dispatch:
 
 jobs:
   build-and-train:
     runs-on: ubuntu-latest
-    services:
-      docker:
-        # Ensure Docker service is available
-        image: docker:20.10.16
-        options: --privileged
-        ports:
-          - 5000:5000
-          - 9000:9000
-          - 9001:9001
 
     steps:
-    - name: Check out repository
-      uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: hoang12b48
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: hoang12b48
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Start MLflow + dependencies with Docker Compose
-      run: |
-        docker compose -f docker-compose-full.yaml up -d mlflow-db minio create-bucket mlflow-server
-        echo "Waiting for MLflow server to be healthy..."
-        # Simple wait loop for MLflow health endpoint
-        for i in {1..30}; do
-          if curl -s http://localhost:5000/health; then
-            echo "MLflow server is ready!"
-            break
-          fi
-          sleep 5
-        done
+      - name: Start MLflow stack with Docker Compose
+        run: |
+          docker compose -f docker-compose-full.yaml up -d mlflow-db minio create-bucket mlflow-server
+          echo "Waiting for MLflow server to be healthy..."
+          for i in {1..40}; do
+            if curl -fs http://localhost:5000; then
+              echo "MLflow is up!"
+              break
+            fi
+            echo "Waiting for MLflow... ($i/40)"
+            sleep 5
+          done
 
-    - name: Train model with MLflow
-      env:
-        MLFLOW_TRACKING_URI: http://localhost:5000
-        AWS_ACCESS_KEY_ID: minioadmin
-        AWS_SECRET_ACCESS_KEY: minioadmin
-      run: |
-        echo "Starting model training..."
-        python scripts/session_4/training.py
-        echo "Training completed and model logged to MLflow."
+      - name: Train model with MLflow
+        env:
+          MLFLOW_TRACKING_URI: http://localhost:5000
+          AWS_ACCESS_KEY_ID: minioadmin
+          AWS_SECRET_ACCESS_KEY: minioadmin
+        run: |
+          echo "Starting model training..."
+          python scripts/session_4/training.py
+          echo "Training completed and model logged to MLflow."
 
-    - name: Build Docker image for FastAPI app
-      run: docker compose -f docker-compose-full.yaml build web
+      - name: Build Docker image for FastAPI app
+        run: |
+          docker compose -f docker-compose-full.yaml build web
 
-    - name: Tag Docker image
-      run: docker tag full_iris:latest hoang12b48/full_iris:latest
+      - name: Tag and Push Docker image to Docker Hub
+        run: |
+          docker tag full_iris:latest hoang12b48/full_iris:latest
+          docker push hoang12b48/full_iris:latest
 
-    - name: Push Docker image to Docker Hub
-      run: docker push hoang12b48/full_iris:latest
+      - name: Shutdown Docker Compose services
+        if: always()
+        run: docker compose -f docker-compose-full.yaml down -v
 
-    - name: Shutdown Docker Compose services
-      run: docker compose -f docker-compose-full.yaml down
-
-    - name: Summary
-      run: echo "Pipeline finished: Training → Build → Push completed."
+      - name: Summary
+        run: echo "Pipeline finished: Training → Build → Push completed."
