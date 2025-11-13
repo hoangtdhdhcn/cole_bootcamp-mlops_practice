@@ -1,0 +1,24 @@
+# MLflow local
+
+version: "3.8"
+
+services:
+  web:
+    build: .
+    container_name: iris-mlops
+    command: uvicorn session_4.app:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    environment:
+      PYTHONUNBUFFERED: 1
+      # Use local MLflow store (inside the container)
+      MLFLOW_TRACKING_URI: file:/app/mlruns
+    volumes:
+      # Mount local project folder to persist mlruns data
+      - .:/app
+    networks:
+      - mlflow-net
+
+networks:
+  mlflow-net:
+    driver: bridge

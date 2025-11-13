@@ -1,4 +1,4 @@
-name: Full Pipeline
+name: Full Pipeline (Remote MLflow)
 
 on:
   [workflow_dispatch]  # manual trigger
