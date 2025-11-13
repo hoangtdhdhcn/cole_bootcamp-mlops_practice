@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iris Flower Prediction</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Iris Flower Prediction</h1>
+        <form id="predictionForm">
+            <label for="petal_length">Petal Length (cm):</label>
+            <input type="number" id="petal_length" name="petal_length" step="any" required>
+            <label for="petal_width">Petal Width (cm):</label>
+            <input type="number" id="petal_width" name="petal_width" step="any" required>
+            <button type="submit">Predict</button>
+        </form>
+
+        <div id="result">
+            <h2>Prediction Result:</h2>
+            <p id="species">Awaiting input...</p> <!-- Result will be displayed here -->
+        </div>
+    </div>
+
+    <script src="/static/js/script.js"></script>
+</body>
+</html>

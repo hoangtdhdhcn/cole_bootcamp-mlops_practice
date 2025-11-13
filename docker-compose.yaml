@@ -1,0 +1,13 @@
+version: "3.8"  # Use a more specific version
+
+services:
+  web:
+    build: .
+    image: fastapi_iris:latest  # Explicitly define the image name and tag
+    command: sh -c "uvicorn session_3.app:app --reload"  # Correct the app location
+    ports:
+      - "8000:8000"  # Expose port 8000
+    volumes:
+      - .:/app  # Mount the current directory to /app inside the container (useful for development)
+    environment:
+      - PYTHONUNBUFFERED=1  # Ensures that Python output is not buffered

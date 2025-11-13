@@ -1,0 +1,44 @@
+name: Run Tests
+
+# Trigger workflow
+# on:
+#   push:
+#     paths:
+#       - 'tests/**'          # any change in tests folder
+#       - 'scripts/**'          # any change in scripts folder
+
+#   pull_request:
+#     paths:
+#       - 'tests/**'          # any change in tests folder
+#       - 'scripts/**'          # any change in scripts folder
+
+on:
+  [workflow_dispatch]   # This enable run the workflow manually
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+        
+      # cache the dependencies so that workflow run faster
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip        # folder to cache
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest -v
