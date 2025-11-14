@@ -1,0 +1,30 @@
+name: Train Model with MLflow UI
+
+on:
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  train-and-mlflow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        run: docker compose -f docker-compose-local_v1.yaml build
+
+      - name: Run model training with local MLflow
+        run: |
+          echo "Training model..."
+          docker compose -f docker-compose-local_v1.yaml run --rm web python training.py
+
+      - name: Start MLflow server
+        run: |
+          echo "Starting MLflow UI..."
+          docker compose -f docker-compose-local_v1.yaml up -d mlflow
+          echo "MLflow is now running at:"
+          echo "http://localhost:5000"
