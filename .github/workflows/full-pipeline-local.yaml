@@ -31,7 +31,7 @@ jobs:
       - name: Train model (local MLflow)
         run: |
           echo "Running training inside Docker..."
-          docker compose -f docker-compose-local.yaml run --rm web python scripts/session_4/training.py
+          docker compose -f docker-compose-local.yaml run --rm web python training.py
 
       - name: Test FastAPI health (optional)
         run: |
