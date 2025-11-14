@@ -6,7 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile.s3
     image: fastapi_iris:latest  # Explicitly define the image name and tag
-    command: sh -c "uvicorn app:app --reload --app-dir scripts/session_3"  # Correct the app location
+    # command: sh -c "uvicorn app:app --reload --app-dir scripts/session_3"  # Correct the app location
+    command: sh -c "uvicorn app:app --reload"  # Correct the app location
     ports:
       - "8000:8000"  # Expose port 8000
     # volumes:
