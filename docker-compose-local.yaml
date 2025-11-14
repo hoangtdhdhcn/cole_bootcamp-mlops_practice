@@ -1,23 +1,8 @@
+# MLflow local
+
 version: "3.8"
 
 services:
-  mlflow:
-    image: ghcr.io/mlflow/mlflow:latest
-    container_name: mlflow-server
-    command: >
-      mlflow server
-      --backend-store-uri sqlite:///mlflow.db
-      --default-artifact-root /mlruns
-      --host 0.0.0.0
-      --port 5000
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./mlflow_data:/mlruns
-      - ./mlflow.db:/mlflow.db
-    networks:
-      - mlflow-net
-
   web:
     build:
       context: .
@@ -30,12 +15,11 @@ services:
       - "8000:8000"
     environment:
       PYTHONUNBUFFERED: 1
-      # Point to the remote MLflow tracking server
-      MLFLOW_TRACKING_URI: http://mlflow:5000
+      # Use local MLflow store (inside the container)
+      MLFLOW_TRACKING_URI: file:/app/mlruns
     # volumes:
+    #   # Mount local project folder to persist mlruns data
     #   - .:/app
-    depends_on:
-      - mlflow
     networks:
       - mlflow-net
 
