@@ -10,7 +10,7 @@ services:
     image: iris_mlops:latest
     container_name: iris-mlops
     # command: uvicorn app:app --host 0.0.0.0 --port 8000 --app-dir scripts/session_4
-    command: sh -c "uvicorn app:app --reload"  # Correct the app location
+    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload  # Correct the app location
     ports:
       - "8000:8000"
     environment:
