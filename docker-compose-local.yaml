@@ -7,7 +7,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.s4
-    image: iris_mlops:latest
+    image: iris_mlops:v1
     container_name: iris-mlops
     # command: uvicorn app:app --host 0.0.0.0 --port 8000 --app-dir scripts/session_4
     command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload  # Correct the app location

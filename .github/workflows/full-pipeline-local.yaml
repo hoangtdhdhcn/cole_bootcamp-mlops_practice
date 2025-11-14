@@ -42,10 +42,10 @@ jobs:
           docker compose -f docker-compose-local.yaml down
 
       - name: Tag Docker image
-        run: docker tag iris_mlops:latest hoang12b48/iris_mlops:latest
+        run: docker tag iris_mlops:v1 hoang12b48/iris_mlops:v1
 
       - name: Push Docker image to Docker Hub
-        run: docker push hoang12b48/iris_mlops:latest
+        run: docker push hoang12b48/iris_mlops:v1
 
       - name: Cleanup
         run: docker compose -f docker-compose-local.yaml down -v
