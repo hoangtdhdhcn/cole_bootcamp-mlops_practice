@@ -16,9 +16,9 @@ services:
       PYTHONUNBUFFERED: 1
       # Use local MLflow store (inside the container)
       MLFLOW_TRACKING_URI: file:/app/mlruns
-    volumes:
-      # Mount local project folder to persist mlruns data
-      - .:/app
+    # volumes:
+    #   # Mount local project folder to persist mlruns data
+    #   - .:/app
     networks:
       - mlflow-net
 

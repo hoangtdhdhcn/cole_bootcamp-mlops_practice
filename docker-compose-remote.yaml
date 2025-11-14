@@ -66,8 +66,8 @@ services:
     command: sh -c "uvicorn app:app --reload"
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
+    # volumes:
+    #   - .:/app
     environment:
       - PYTHONUNBUFFERED=1
       - MLFLOW_TRACKING_URI=http://mlflow-server:5000
