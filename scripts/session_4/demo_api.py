@@ -14,7 +14,8 @@ import logging
 # Configuration
 # ======================
 MODEL_NAME = "iris_model"
-MODEL_STAGE = "Production"
+# MODEL_STAGE = "Production"
+MODEL_VERSION = "1"
 DATA_LOG_PATH = "data/new_iris_data.csv"
 
 logging.basicConfig(level=logging.INFO)
@@ -41,13 +42,13 @@ mlflow.set_tracking_uri(get_tracking_uri())
 # ======================
 model = None
 try:
-    model_uri = f"models:/{MODEL_NAME}/{MODEL_STAGE}"
+    model_uri = f"models:/{MODEL_NAME}/{MODEL_VERSION}"
     model = mlflow.pyfunc.load_model(model_uri)
     logging.info(f"Loaded model from MLflow Registry: {model_uri}")
 except Exception as e:
     logging.warning(f"Could not load model from MLflow Registry: {e}")
     # fallback to local artifact path
-    local_model_path = "./mlruns/1/iris_model"
+    local_model_path = "./mlruns/0/iris_model"
     if os.path.exists(local_model_path):
         model = mlflow.pyfunc.load_model(local_model_path)
         logging.info(f"Loaded model from local mlruns path: {local_model_path}")
@@ -109,4 +110,4 @@ async def startup_event():
     if model is None:
         logging.warning("No model loaded — check MLflow tracking or local model path.")
     else:
-        logging.info(f"Model '{MODEL_NAME}' ({MODEL_STAGE}) is ready for inference.")
+        logging.info(f"Model '{MODEL_NAME}' ({MODEL_VERSION}) is ready for inference.")

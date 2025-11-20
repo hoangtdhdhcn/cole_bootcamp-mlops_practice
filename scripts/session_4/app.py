@@ -15,7 +15,8 @@ import logging
 # Configuration
 # ==============================
 MODEL_NAME = "iris_model"
-MODEL_STAGE = "Production"
+# MODEL_STAGE = "Production"
+MODEL_VERSION = "1"
 DATA_LOG_PATH = "data/new_iris_data.csv"
 
 # Flexible MLflow tracking URI
@@ -37,6 +38,7 @@ app = FastAPI(title="Iris Classifier (MLOps UI Edition)")
 # templates = Jinja2Templates(directory="templates")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# print(BASE_DIR)
 
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
@@ -48,13 +50,13 @@ mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
 model = None
 try:
-    model_uri = f"models:/{MODEL_NAME}/{MODEL_STAGE}"
+    model_uri = f"models:/{MODEL_NAME}/{MODEL_VERSION}"
     model = mlflow.pyfunc.load_model(model_uri)
     logging.info(f"Loaded model from MLflow Registry: {model_uri}")
 except Exception as e:
     logging.warning(f"Could not load model from MLflow Registry, fallback to local artifact: {e}")
     # Attempt local artifact path if registry unavailable
-    local_model_path = "./mlruns/1/iris_model"
+    local_model_path = "./mlruns/0/iris_model"
     if os.path.exists(local_model_path):
         model = mlflow.pyfunc.load_model(local_model_path)
         logging.info(f"Loaded model from local mlruns: {local_model_path}")
@@ -103,15 +105,19 @@ async def predict_iris_species(features: List[IrisFeatures]):
 async def read_form(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "result": None})
 
-@app.post("/submit", response_class=HTMLResponse)
-async def submit_form(request: Request, petal_length: float = Form(...), petal_width: float = Form(...)):
+@app.post("/submit")
+async def submit_form(petal_length: float = Form(...), petal_width: float = Form(...)):
     if model is None:
-        result = "Model not loaded"
-    else:
-        df = pd.DataFrame({"petal length (cm)": [petal_length], "petal width (cm)": [petal_width]})
-        species = predict_and_log(df)
-        result = species[0]
-    return templates.TemplateResponse("index.html", {"request": request, "result": result})
+        return {"species": "Model not loaded"}
+
+    df = pd.DataFrame({
+        "petal length (cm)": [petal_length],
+        "petal width (cm)": [petal_width]
+    })
+
+    species = predict_and_log(df)
+    return {"species": species[0]}
+
 
 @app.get("/health")
 async def health():
@@ -120,6 +126,6 @@ async def health():
 @app.on_event("startup")
 async def startup_event():
     if model:
-        logging.info(f"Model '{MODEL_NAME}' ({MODEL_STAGE}) is ready for inference.")
+        logging.info(f"Model '{MODEL_NAME}' ({MODEL_VERSION}) is ready for inference.")
     else:
         logging.warning("No model loaded — check MLflow tracking URI or local mlruns.")
