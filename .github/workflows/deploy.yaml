@@ -1,15 +1,16 @@
 name: Test & Deploy to Google Cloud Run
 
 on:
-  pull_request:
-    paths:
-      - 'scripts/**/*'
-      - 'tests/**/*'
-      - 'requirements.txt'
-      - '.github/workflows/test_workflow.yaml'
-  push:
-    branches:
-      - main
+  # pull_request:
+  #   paths:
+  #     - 'scripts/**/*'
+  #     - 'tests/**/*'
+  #     - 'requirements.txt'
+  #     - '.github/workflows/test_workflow.yaml'
+  # push:
+  #   branches:
+  #     - main
+  [workflow_dispatch]  # Manual trigger
 
 jobs:
   test_job:
