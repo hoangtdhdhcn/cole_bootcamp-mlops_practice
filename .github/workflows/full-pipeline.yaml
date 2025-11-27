@@ -1,74 +1,54 @@
-name: Full Pipeline (Remote MLflow)
+name: Full Pipeline (Local MLflow)
 
 on:
-  [workflow_dispatch]  # manual trigger
+  [workflow_dispatch]  # Manual trigger
 
 jobs:
   mlops-pipeline:
     runs-on: ubuntu-latest
-    services:
-      docker:
-        image: docker:24-dind
-        options: --privileged
-        ports:
-          - 5000:5000
-          - 9000:9000
-          - 9001:9001
 
     env:
-      MLFLOW_TRACKING_URI: http://mlflow-server:5000
-      AWS_ACCESS_KEY_ID: minioadmin
-      AWS_SECRET_ACCESS_KEY: minioadmin
+      MLFLOW_TRACKING_URI: file:/app/mlruns
+      PYTHONUNBUFFERED: 1
       RUNNING_IN_DOCKER: "1"
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: hoang12b48
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: hoang12b48
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Build Docker images
-      run: docker compose -f docker-compose-full.yaml build
+      - name: Build Docker image
+        run: docker compose -f docker-compose-local.yaml build
 
-    - name: Start MLflow + dependencies
-      run: |
-        docker compose -f docker-compose-full.yaml -f docker-compose-ci.yaml up -d mlflow-db minio create-bucket mlflow-server
+      - name: Train model (local MLflow)
+        run: |
+          echo "Running training inside Docker..."
+          docker compose -f docker-compose-local.yaml run --rm web python training.py
 
-
-    - name: Wait for MLflow server to be ready
-      run: |
-        echo "Waiting for MLflow server..."
-        for i in {1..30}; do
-          if docker compose exec -T mlflow-server curl -s http://localhost:5000/api/2.0/mlflow/experiments/list; then
-            echo "MLflow server is ready"
-            break
-          fi
-          echo "Waiting..."
+      - name: Test FastAPI health (optional)
+        run: |
+          docker compose -f docker-compose-local.yaml up -d web
+          echo "Waiting for FastAPI..."
           sleep 5
-        done
+          curl -f http://localhost:8000/health || (docker logs iris-mlops && exit 1)
+          docker compose -f docker-compose-local.yaml down
 
-    - name: Train model inside Docker
-      run: |
-        docker compose run --rm web python scripts/session_4/training.py
+      - name: Tag Docker image
+        run: docker tag iris_mlops:v1 hoang12b48/iris_mlops:v1
 
-    - name: Build FastAPI image
-      run: docker compose -f docker-compose-full.yaml build web
+      - name: Push Docker image to Docker Hub
+        run: docker push hoang12b48/iris_mlops:v1
 
-    - name: Tag Docker image
-      run: docker tag iris_mlops:latest hoang12b48/iris_mlops:latest
+      - name: Cleanup
+        run: docker compose -f docker-compose-local.yaml down -v
 
-    - name: Push Docker image to Docker Hub
-      run: docker push hoang12b48/iris_mlops:latest
-
-    - name: Shutdown Docker Compose services
-      run: docker compose -f docker-compose-full.yaml down
-
-    - name: Summary
-      run: echo "Pipeline finished :Training → Build → Push completed."
+      - name: Summary
+        run: echo "Pipeline completed :Training → Test → Push"
